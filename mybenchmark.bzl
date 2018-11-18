@@ -3,11 +3,30 @@ load(
   "haskell_binary",
 )
 
-def mybenchmark(tags = [], args = [], **kwargs):
-    haskell_binary(
-      # Add the `benchmark` tag so that we can easily refer to it later
-      tags = ["benchmark"] + tags,
-      # Export the html report by default
-      args = ["--output", "result.html"] + args,
+def mybenchmark(
+    name,
+    srcs,
+    deps = [],
+    testonly = True,
+    tags = [],
+    args = [],
+    size = "enormous",
+    **kwargs
+  ):
+  binary_name = name + "@binary"
+  haskell_binary(
+    name = binary_name,
+    testonly = testonly,
+    srcs = srcs,
+    deps = deps,
+    **kwargs
+  )
+  native.sh_test(
+      name = name,
+      size = size,
+      tags = tags + ["benchmark", "exclusive"],
+      srcs = ["//:criterion.sh"],
+      args = ["$(location :{binary})".format(binary = binary_name)] + args,
+      data = [":" + binary_name],
       **kwargs
-    )
+  )
